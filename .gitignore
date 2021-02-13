@@ -1,2 +1,5 @@
 src/config.py
 src/__pycache__/
+data/
+src/.ipynb_checkpoints/
+.vscode/
