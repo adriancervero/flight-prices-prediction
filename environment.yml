@@ -1,0 +1,11 @@
+name: tfm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - pandas
+  - jupyterlab=3
+  - scikit-learn
+
