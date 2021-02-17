@@ -6,12 +6,21 @@
     @author: Adrián Cerveró
 """
 
+#-------------------------------------------------------------------
+# Imports 
+# ------------------------------------------------------------------
 import pandas as pd
 import numpy as np
 from datetime import datetime
-
+from pathlib import Path
+import sys
+import os
+#-------------------------------------------------------------------
+# Variables 
+# ------------------------------------------------------------------
 RAW_DATA_PATH = '../../data/raw/flights_raw.csv'
-INTERIM_DATA_PATH = '../../data/interim/flights_interim.csv'
+INTERIM_DATA_PATH = '/interim/flights_interim.csv'
+# ------------------------------------------------------------------
 
 def load_data(path):
     """
@@ -27,7 +36,8 @@ def load_data(path):
                'fly_duration', 'flyFrom', 'cityFrom', 'cityCodeFrom','flyTo',
                'cityTo','cityCodeTo', 'distance', 'price', 'route', 'countryFrom',
           'countryTo', 'flight_no', 'seats', 'collectionDate']
-
+    
+    os.chdir(sys.path[0])
     df = pd.read_csv(path, names=columns)
     return df
 
@@ -66,6 +76,7 @@ def prepare_data(filename):
     Args:
         filename (str): raw data filename path
     """
+    
     flights = load_data(filename)
     flights = process_dates_cols(flights)
 
@@ -75,8 +86,10 @@ def prepare_data(filename):
            'countryTo']
 
     flights = flights[columns]
-    flights.to_csv(INTERIM_DATA_PATH, index=False)
-    return '01 data prepared!: ' + INTERIM_DATA_PATH
+
+    store_path = str(Path(filename).parent.parent) + INTERIM_DATA_PATH
+    flights.to_csv(store_path, index=False)
+    return store_path
 
 if __name__ == '__main__':
     filename = RAW_DATA_PATH
