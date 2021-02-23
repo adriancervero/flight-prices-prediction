@@ -41,6 +41,12 @@ def load_data(path):
     df = pd.read_csv(path, names=columns)
     return df
 
+def duration_to_numeric(duration):
+    """ Fly duration string to float in hours """
+    hours = float(duration.split(' ')[0][:-1])
+    minutes = float(duration.split(' ')[1][:-1])
+    return hours + minutes/60
+
 def process_dates_cols(df):
     """
     - Split dates in date and time columns. 
@@ -79,6 +85,7 @@ def prepare_data(filename):
     
     flights = load_data(filename)
     flights = process_dates_cols(flights)
+    flights['fly_duration'] = flights['fly_duration'].apply(duration_to_numeric)
 
     columns = ['collectionDate','dDate', 'dTime', 'aDate', 'aTime', 'dTimeUTC', 'aTimeUTC',
            'flyFrom', 'flyTo', 'airlines', 'flight_no', 'fly_duration', 'distance', 'route',
