@@ -15,16 +15,29 @@ import time
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 
-import config as cfg
 
-DAYS_RANGE = cfg.api['DAYS_RANGE']
-ROUTES = cfg.api['ROUTES']
 
-HOST = cfg.db['HOST']
-PORT = cfg.db['PORT']
-DB = cfg.db['NAME']
-USER = cfg.db['USER']
-PASSW = cfg.db['PASS']
+DAYS_RANGE = 90
+ROUTES = [
+    # Regional
+    ('MAD', 'BCN'), # Madrid-Barcelona
+    ('MAD', 'TFN'), # Madrid-Tenerife
+    ('BCN', 'PMI'), # Barcelona-Palma de Mallorca
+    # International
+    ('MAD', 'LHR'), # Madrid-London
+    ('MAD', 'JFK'), # Madrid-New York
+    ('MAD', 'EZE'), # Madrid-Buenos Aires
+    ('MAD', 'MEX'), # Madrid-Mexico City
+    ('BCN', 'LGW'), # Barcelona-London
+    ('BCN', 'AMS'), # Barcelona-Amsterdam
+    ('BCN', 'FCO'), # Barcelona-Roma
+]
+
+HOST = '********************'
+PORT = '****'
+DB  = '******'
+USER = '******''
+PASSW = '********************'
 
 def send_request(origin, dest, date_from, date_to, limit=1000):
     """ 
@@ -48,21 +61,25 @@ def send_request(origin, dest, date_from, date_to, limit=1000):
         'date_to': date_to,
         'limit':limit
     }
-    attempts = 0
-    while attempts < 5:
+    
+    attemps = 0
+    while attemps < 5:
         try:
             response = requests.get(url=URL, params=PARAMS)
+            if 'message' in list(response.json().keys()):
+                print(response.text)
+                return
             break
-        except:
-            if attempts > 5:
+        except Exception as e:
+            if attemps > 5:
+                print('Tries number wasted')
                 return -1
             else:
-                attempts += 1
-                time.sleep(1)
+                print('ERROR:', e)
+                attemps += 1
+                time.sleep(3)    
+
     
-    if 'message' in list(response.json().keys()):
-        print(response.text)
-        return
     return response.json()
 
 def routes_to_string(routes):
@@ -87,8 +104,15 @@ def process_response(data):
 
     df = pd.DataFrame(data)
 
-    final_df = df[columns].copy()
-
+    try:
+        final_df = df[columns].copy()
+    except Exception as e:
+        print('ERROR:', e)
+        for col in columns:
+            if col in df.columns:
+                print(col, 'OK')
+            else:
+                print(col, 'column not found')
     # bit of preprocessing before store it in database
     final_df['route'] = df['routes'].apply(routes_to_string)
     final_df['countryFrom'] = df['countryFrom'].apply(lambda x: x['name'])
@@ -124,7 +148,7 @@ def request_data(days_range, routes, verbose=False):
             dest = route[1]
 
             response = send_request(orig, dest, i_date_str, i_date_str)
-            if response == -1: # if request failed continue to the next day
+            if response == -1:
                 continue
             data = process_response(response['data'])
             
@@ -135,7 +159,7 @@ def request_data(days_range, routes, verbose=False):
             # update date to the next day
             i_date += timedelta(days=1)
         
-    with open('flights.log', 'w') as f:
+    with open('flights.log', 'a') as f:
         now = datetime.now()
         now_str = now.strftime("%d-%b-%Y (%H:%M:%S)")
         
