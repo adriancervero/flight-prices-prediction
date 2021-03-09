@@ -84,6 +84,7 @@ def prepare_data(filename):
     """
     
     flights = load_data(filename)
+    flights.drop_duplicates(inplace=True)
     flights = process_dates_cols(flights)
     flights['fly_duration'] = flights['fly_duration'].apply(duration_to_numeric)
 
