@@ -3,3 +3,7 @@ src/__pycache__/
 src/.ipynb_checkpoints/
 .vscode/
 models/
+__pycache__/
+notebooks/.ipynb_checkpoints/
+notebooks/todo.txt
+scripts/.ipynb_checkpoints/
