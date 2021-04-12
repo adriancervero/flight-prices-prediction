@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-    Build new features into the dataset
-    @author: Adrián Cerveró
+    Prepare data for model training:
+        1. Missing values treatment
+        2. Adding new features
+        3. Split data in train and test
 """
 
 
@@ -168,6 +170,7 @@ def add_waiting_days(df):
     return df
 
 def split_data(df, test_days=14):
+    """ Split data in train/test set """
     flight_dates = pd.to_datetime(df['dDate'])
     split_date = flight_dates.max() - timedelta(days=test_days)
     train = df[flight_dates <= split_date].copy()
@@ -180,15 +183,19 @@ def store_data():
     df.to_csv(store_path, index=False)
     return store_path
 
-def preprocessing(filename, verbose):
-    """[summary]
+def feature_engineering(filename, verbose):
+    """
+        Prepare data for model training:
+            1. Missing values treatment
+            2. Adding new features
+            3. Split data in train and test
 
-    Args:
-        filename (str): [description]
+        Args:
+            filename (str): input data path
     """
     
     if verbose:
-        print('Starting preprocessing...')
+        print('Starting feature engineering...')
         print('...Loading data...', end='\r')
 
     os.chdir(sys.path[0])
@@ -214,21 +221,22 @@ def preprocessing(filename, verbose):
     # add target 'waiting_days'
     df = add_waiting_days(df)
 
-    print('\nPreprocessing done!')
+    print('\nDone!')
     
     # split data in train and test sets
     train, test = split_data(df, test_days=cfg.TEST_DAYS)
 
     # Store data in processed folder
-    store_path = str(Path(filename).parent.parent) + cfg.TRAIN_PROCESSED
-    train.to_csv(store_path, index=False)
-    print('\nTrain data stored successfully!:', store_path)
-    store_path = str(Path(filename).parent.parent) + cfg.TEST_PROCESSED
-    test.to_csv(store_path, index=False)
-    print('Test data stored successfully!:', store_path)
+    os.chdir(sys.path[0])
+
+    train.to_csv(cfg.TRAIN_PROCESSED, index=False)
+    print('\nTrain data stored successfully!:', cfg.TRAIN_PROCESSED)
+    
+    test.to_csv(cfg.TEST_PROCESSED, index=False)
+    print('Test data stored successfully!:', cfg.TEST_PROCESSED)
     
 
 if __name__ == '__main__':
-    preprocessing(cfg.INTERIM_DATA_PATH, verbose=True)
+    feature_engineering(cfg.INTERIM_DATA_PATH, verbose=True)
     
     
