@@ -97,8 +97,11 @@ def run(model):
     print('Score:', -scores.mean())
 
     # Save model and pipeline
+
+    pipeline.fit(X, y)
+
     pickle.dump(m, open(f'../models/model_{model}.pkl', 'wb'))
-    pickle.dump(pipeline, open(f'../models/pipeline.pkl', 'wb'))
+    pickle.dump(pipeline, open(f'../models/pipeline_{model}.pkl', 'wb'))
 
 
 
