@@ -18,7 +18,7 @@ import os
 #-------------------------------------------------------------------
 # Variables 
 # ------------------------------------------------------------------
-RAW_DATA_PATH = '../../data/raw/flights_raw.csv'
+RAW_DATA_PATH = '../data/raw/flights_raw.csv'
 INTERIM_DATA_PATH = '/interim/flights_interim.csv'
 # ------------------------------------------------------------------
 
