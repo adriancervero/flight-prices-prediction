@@ -2,64 +2,31 @@ import pandas as pd
 import numpy as np 
 import random
 
-def get_waiting_price(row):
-    if row['predicted'] != 0:
-        #idx = row['predicted'] - 1
-        list_prices = row['hist_prices'].strip('][').split(', ')
-        idx = len(list_prices)-row['days_until_dep']+row['predicted']
-        waiting_price = float(list_prices[idx])
-        if np.isnan(waiting_price):
-            waiting_price = row['price']
-    else:
-        waiting_price = row['price']
-        
-    return waiting_price
-
-
-def get_best_waiting_price(row):
-    if row['waiting_days'] != 0:
-        #idx = row['waiting_days'] - 1
-        list_prices = row['hist_prices'].strip('][').split(', ')
-        idx = len(list_prices)-row['days_until_dep']+row['waiting_days']
-        waiting_price = float(list_prices[idx])
-        if np.isnan(waiting_price):
-            waiting_price = row['price']
-    else:
-        waiting_price = row['price']
-        
-    return waiting_price
-
-
 class Simulator():
+    """
+        Simulates a given number of travelers looking for the cheapest flight for a random 
+        itinerary. It calculates how much money these travelers spend and compares it with 
+        what they would spend if they followed the predictive model.
+
+        Args:
+            n (int): number of travellers
+            flights (Dataframe): flights data
+            pipeline (sklearn.Pipeline): pipeline with preprocessing and model
+    """
     def __init__(self, n, flights, pipeline):
         self.n = n
         self.flights = flights
         self.pipeline = pipeline
         
     def generate_travellers(self):
-        """
-        routes = self.flights['orig-dest'].unique()
-        departures = self.flights['dDate'].unique()
-        
-        #requests = self.flights['days_until_dep'].unique()
-        requests = np.arange(7, 46)
-        travellers_routes = random.choices(routes, k=self.n)
-        travellers_dep_date = random.choices(departures, k=self.n)
-        travellers_req_date = random.choices(requests, k=self.n)
-        id_traveler = np.arange(0, self.n)
-        self.travellers = pd.DataFrame({'id_traveler': id_traveler,
-                                        'route': travellers_routes,
-                                        'departure': travellers_dep_date,
-                                        'request':travellers_req_date})
-        """
+        """ Create dataframe with n simulated travellers """
         self.travellers = self.flights[['orig-dest','dDate', 'days_until_dep']].sample(self.n)
         self.travellers['id_traveler'] = np.arange(0, self.n)
         
     def get_cheapest_flights(self):
-        # select cheapest flight for each traveler
-        #merged = pd.merge(self.travellers, self.flights, left_on=['departure', 'route', 'request'], right_on=['dDate', 'orig-dest', 'days_until_dep'])
+        """ Select cheapest flight for each traveler """
+ 
         merged = pd.merge(self.travellers, self.flights, on=['orig-dest','dDate', 'days_until_dep'])
-        #group_cols = list(self.travellers.columns)
         cheapest_indexes = merged.groupby('id_traveler')['price'].idxmin()
         self.cheapest_flights = merged.loc[cheapest_indexes]
 
@@ -132,3 +99,39 @@ class Simulator():
         self.make_predictions()
         self.compute_savings()
         self.visualize_results_by_route()
+    
+
+def get_waiting_price(row):
+    """ 
+        Returns the price of the flight if the passenger 
+        waits for the days according to the predicted tags.
+    """
+    if row['predicted'] != 0:
+        #idx = row['predicted'] - 1
+        list_prices = row['hist_prices'].strip('][').split(', ')
+        idx = len(list_prices)-row['days_until_dep']+row['predicted']
+        waiting_price = float(list_prices[idx])
+        if np.isnan(waiting_price):
+            waiting_price = row['price']
+    else:
+        waiting_price = row['price']
+        
+    return waiting_price
+
+
+def get_best_waiting_price(row):
+    """ 
+        Returns the price of the flight if the passenger 
+        waits for the days according to the real tags.
+    """
+    if row['waiting_days'] != 0:
+        #idx = row['waiting_days'] - 1
+        list_prices = row['hist_prices'].strip('][').split(', ')
+        idx = len(list_prices)-row['days_until_dep']+row['waiting_days']
+        waiting_price = float(list_prices[idx])
+        if np.isnan(waiting_price):
+            waiting_price = row['price']
+    else:
+        waiting_price = row['price']
+        
+    return waiting_price
