@@ -26,4 +26,3 @@ TARGET = ['waiting_days']
 
 # MODEL OUTPUT
 MODEL_OUTPUT = '../models/'
-
