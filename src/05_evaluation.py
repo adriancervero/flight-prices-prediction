@@ -16,7 +16,7 @@ def evaluator(model):
     pipeline_path = cfg.MODEL_OUTPUT + f'pipeline_{model}.pkl'
     pipeline = pickle.load(open(pipeline_path, 'rb'))
     test_data = pd.read_csv(cfg.TEST_PROCESSED)
-    sim = Simulator(1000, test_data, pipeline)
+    sim = Simulator(5000, test_data, pipeline)
     sim.run()
 
 if __name__ == '__main__':
