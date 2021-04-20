@@ -10,23 +10,29 @@ import os, sys
 import config as cfg
 from Simulator import Simulator
 
-def evaluator(model):
+import warnings
+warnings.filterwarnings('ignore')
+
+def evaluator(model, n_travelers):
     os.chdir(sys.path[0])
 
-    pipeline_path = cfg.MODEL_OUTPUT + f'pipeline_{model}.pkl'
+    pipeline_path = cfg.MODEL_OUTPUT + model
     pipeline = pickle.load(open(pipeline_path, 'rb'))
     test_data = pd.read_csv(cfg.TEST_PROCESSED)
-    sim = Simulator(5000, test_data, pipeline)
+    
+    sim = Simulator(n_travelers, test_data, pipeline)
     sim.run()
 
 if __name__ == '__main__':
     # ArgumentParser
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str)
+    parser.add_argument('-n', type=int, default=5000)
 
     # read arguments from command line
     args = parser.parse_args()
 
     evaluator(
-        model=args.model
+        model=args.model,
+        n_travelers=args.n
     )
