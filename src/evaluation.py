@@ -10,8 +10,6 @@ import os, sys
 import config as cfg
 from Simulator import Simulator
 
-import warnings
-warnings.filterwarnings('ignore')
 
 def evaluator(model, n_travelers):
     os.chdir(sys.path[0])
