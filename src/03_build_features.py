@@ -8,9 +8,13 @@
         3. Split data in train and test
 """
 
-
+#-------------------------------------------------------------------
+# Imports 
+# ------------------------------------------------------------------
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt 
+import seaborn as sns
 from datetime import datetime, timedelta
 import os, sys
 
@@ -18,223 +22,243 @@ import config as cfg
 from tqdm import tqdm
 tqdm.pandas()
 
-def fill_missing(df):
-    """
-        Fills in the missing days by duplicating the flights of the previous day.
-        
-        Args:
-            - df: Dataframe with flights data
-        Returns: 
-            - Same dataframe with news added rows with no missing days.
-    """
-    collectionDates = df['collectionDate'].unique()
-    dates_range = pd.date_range(collectionDates[0], collectionDates[-1]).tolist()
-    dates_range = [str(date).split()[0] for date in dates_range]
-    missing_dates = [date for date in dates_range if date not in collectionDates]
-    missing_dates_dt = [datetime.strptime(date, '%Y-%m-%d') for date in missing_dates]
-    previous_dates_dt = [date + timedelta(days=-1) for date in missing_dates_dt]
-    previous_dates = [datetime.strftime(date, '%Y-%m-%d') for date in previous_dates_dt]
+import warnings
+warnings.filterwarnings('ignore')
+
+
+def load_data(path):
+    """ Load data and return a Pandas dataframe. """
+    print('...loading data from .csv...')
     
-    for idx, date in enumerate(missing_dates):
-        previous_date = previous_dates[idx]
-        this_date = df[df['collectionDate'] == previous_date].copy()
-        this_date['collectionDate'] = date
-        df = df.append(this_date)
+    os.chdir(sys.path[0]) # relative path to the .py file
+    df = pd.read_csv(path)
     return df
 
-def add_dDate_features(df):
-    """ New features extracted from departure date """
-    # Day of month
-    df['day_of_month'] = pd.to_datetime(df['dDate']).dt.day
-    # Day of the week
-    df['day_of_week'] = pd.to_datetime(df['dDate']).apply(lambda x: x.day_of_week)
-    days_of_week = {0:'Monday', 1:'Tuesday', 2:'Wednesday', 3:'Thursday', 4:'Friday', 5:'Saturday', 6:'Sunday'}
-    df['day_of_week'] = df['day_of_week'].map(days_of_week)
-    return df
+def cleaning_df(df):
+    """ Drop no relevant columns """
+    drop_cols = ['seats', 'dTimeUTC', 'aTimeUTC', 'flight_no',
+            'cityFrom', 'cityCodeFrom', 'cityTo', 'cityCodeTo', 'countryFrom',
+             'countryTo']
+    return df.drop(drop_cols, axis=1, )
+
 
 def add_days_until_dep_feature(df):
     """ Remaining days until flight departure """
     collected = pd.to_datetime(df['collectionDate'])
     departure =  pd.to_datetime(df['dDate'])
     daysUntilDep = departure - collected
-    df['days_until_dep'] = daysUntilDep.apply(lambda x: str(x).split()[0]).astype(int)
+    df['days_until_dep'] = daysUntilDep.dt.days
     return df
-
-def add_competition_feature(df):
-    """ Competition factor represents how many flights are for a given day 
-        for the same itinerary """
-    competition = df.groupby(['flyFrom','flyTo','dDate'])['airline'].nunique().reset_index()
-    competition.columns = ['flyFrom','flyTo','dDate', 'competition']
-    df = pd.merge(df, competition, on=['dDate', 'flyFrom', 'flyTo'])
-    return df
-
-def add_hist_prices(df, progress_bar=True):
-    """ 
-        New feature 'hist_prices' consisting of a historical price list for each flight.
-        
-        Args: 
-            - df: Dataframe with flights data.
-            - progress_bar: If enabled, it displays a progress bar during execution.
-            
-        Returns: 
-            - Same dataframe with the new column 'hist_prices'
-    """
-    print("...Adding 'hist_prices' feature...", end='\n')
-    sorted_by_date = df.sort_values(by='collectionDate')
-    if progress_bar: 
-        grouped = sorted_by_date.groupby(['id'])['price'].progress_apply(list)
-    else:
-        grouped = sorted_by_date.groupby(['id'])['price'].apply(list)
-    grouped = grouped.reset_index(name='hist_prices')
-    merged = pd.merge(df, grouped, on='id')
-    return merged
 
 def build_features(df):
     """ Add new features """
 
-    #  new features from 'price' column
-    df['log_price'] = np.log(df['price'])
-    
-    # new features from 'dDate' column
-    df = add_dDate_features(df)
-    # Day session
-    df['session'] = pd.cut(pd.to_datetime(df['dTime']), bins=4, labels=['night', 'morning', 'afternoon', 'evening'])
-    # Route
+    # orig and dest in same column
     df['orig-dest'] = df['flyFrom']+'-'+df['flyTo']
-    # Airline
-    df['airline'] = df['airlines'].apply(lambda x: x.split(',')[0])
-    # Days until departure 
+    # departure time in three categories: 'morning', 'evening', 'night'
+    df['session'] = pd.cut(pd.to_datetime(df['dTime']), bins=3, labels=['night', 'morning', 'evening'])
+    # Departure day of week
+    days_of_week = {5:'Monday', 6:'Tuesday', 0:'Wednesday', 1:'Thursday', 2:'Friday', 3:'Saturday', 4:'Sunday'}
+    df['day_of_week'] = pd.to_datetime(df['dTime']).dt.weekday.map(days_of_week)
+    # airline
+    df['airline'] = df['airlines'].str.split(',').apply(lambda x: x[0])
+    # days until departure
     df = add_days_until_dep_feature(df)
-    # Hopping
-    df['hops'] = df['route'].apply(lambda x: len(x.split('->')) - 2)
-    df['direct'] = df['hops'] == 0
 
-    # Competition factor
-    df = add_competition_feature(df)
-
-    # id flight
-    df['id'] = df.groupby(['dDate', 'flyFrom', 'flyTo', 'dTime', 'aTime', 'airline', 'fly_duration']).ngroup()
-
-    # Historical prices for each flight
-    df = add_hist_prices(df)
-    # TODO: features from hist_prices; min, max, mean, quartiles...
     return df
 
-def filter_flights(df):
-    """ Flight filtering to select only valid flights. This is, flights which 
-        we have the price for each of the days until the departure of the flight
-        
-        Args:
-            - df: Dataframe with flights data
-        Returns
-            - new_df: New dataframe with only valid flights.
-    """
-    max_days = df.groupby('id')['days_until_dep'].transform(max)
-    hist_lengths = df['hist_prices'].apply(len)
-    new_df = df[max_days == hist_lengths].copy()
-    return new_df
 
-def add_waiting_days(df):
-    """
-        Add new feature 'waiting_days' that indicates the days to wait to 
-        get the best price among the remaining days until flight departure. 
-        This will be the target variable.
-        
-        Args: 
-            - df: Dataframe with flights data
-        Returns
-            - Same dataframe with the new target: 'waiting_days'
-    """
-    
-    waiting_days_list = np.array([])
-    for row in tqdm(df.itertuples(), total=df.shape[0]):
-        current_price = row.price
-        hist = row.hist_prices
-        days_until_dep = int(row.days_until_dep)
-        idx = len(hist)-days_until_dep
-        if days_until_dep > 1:
-            next_days_prices = hist[idx+1:]
-            idx_min = np.argmin(next_days_prices)
-            min_price = next_days_prices[idx_min]
-            if min_price < current_price:
-                waiting_days = idx_min+1
-            else:
-                waiting_days = 0
-        else:
-            waiting_days = 0
-       # print(row.id, days_until_dep, row.price, next_days_prices, waiting_days)
-        waiting_days_list = np.append(waiting_days_list, waiting_days)
-    df['waiting_days'] = waiting_days_list.astype(int)
-    return df
-
-def split_data(df, test_days=14):
+def split_data(df, test_days=30):
     """ Split data in train/test set """
-    flight_dates = pd.to_datetime(df['dDate'])
-    split_date = flight_dates.max() - timedelta(days=test_days)
-    train = df[flight_dates <= split_date].copy()
-    test = df[flight_dates > split_date].copy()
+    collection_dates = pd.to_datetime(df['collectionDate'])
+    departure_dates = pd.to_datetime(df['dDate'])
+    
+    split_date = collection_dates.max() - timedelta(days=test_days)
+    test_idx = (collection_dates >= split_date) & (departure_dates <= collection_dates.max())
+    test = df[test_idx]
+    train = df[~test_idx]
     return train, test
 
-def store_data():
-    """ Store dataframe with new features in data processed folder """
-    store_path = str(Path(filename).parent.parent) + PROCESSED_DATA_PATH
-    df.to_csv(store_path, index=False)
-    return store_path
+def q25(x):
+    """ Return first quantile of x """
+    return x.quantile(0.25)
 
-def feature_engineering(filename, verbose):
+def get_labels(row):
+    """ Assign wait or buy label """
+    current_d = row['days_until_dep']
+    current_price = row[cfg.COMBINE_PRICE_FEATURE]
+    list_prices = np.array(row['list_prices'])
+    next_days = list_prices[:current_d-1]
+    if len(next_days) == 0:
+        return 0
+    else:
+        min_price = np.min(next_days)
+
+        if min_price < current_price and 1-(min_price/current_price) > cfg.MIN_DROP_PER:
+            return 1
+        else:
+            return 0
+
+def get_last_days_q25(row):
+    """ Compute first quantile of last x days for each group """
+    list_prices = row['list_prices']
+    start_idx = row['days_until_dep']
+    end_idx = start_idx + cfg.LAST_DAYS
+
+    last_days_prices = list_prices[start_idx:end_idx]
+    if last_days_prices == []:
+        last_days_prices = list_prices[-1]
+    return np.quantile(last_days_prices, 0.25)
+
+def create_price_bins(train):
+    """ Return dataframe with estimate prices for each days until dep value """
+    # Creation of bins
+    lower = train['days_until_dep'].min()
+    higher = train['days_until_dep'].max()
+
+    n_bins = int(higher/5)
+    edges = range(lower, higher+5, 5)
+
+    lbs = ['(%d, %d]'%(edges[i], edges[i+1]) for i in range(len(edges)-1)]
+    train.loc[:, 'days_bins'] = pd.cut(train['days_until_dep'],bins=n_bins, labels=lbs)
+
+    price_bins = train.groupby(['orig-dest', 'airline', 'days_bins'])['price'] \
+                    .quantile(.25).rename('price_est').reset_index().dropna()
+    
+    # prices
+    # plotting bins prices
+    plt.figure(figsize=(8,4))
+    fig, axes = plt.subplots(1, 1, figsize=(8,4))
+    sns.boxplot(x='days_bins', y='price_est', data=price_bins, palette="Blues_r");
+    plt.xticks(rotation=45);
+    plt.xlabel('Days until departure')
+    plt.ylabel('Price Estimated')
+
+    fig.savefig(cfg.FIGURES_PATH+'est_prices.png', pad_inches=0.5, bbox_inches='tight')
+
+    bins_days = train[['days_until_dep', 'days_bins']].drop_duplicates()
+    bins_days['days_bins'] = bins_days['days_bins'].cat.codes
+
+    # save dataframes
+    price_bins.to_csv('../data/processed/price_bins.csv', index=False)
+    bins_days.to_csv('../data/processed/bins_days.csv', index=False)
+
+def agg_flights(train):
+    """ 
+    Grouping fligths by previously defined agg. cols. 
+    (orig-dest, airline, session, days_until_dep), adding
+    new features and label data with wait/buy
+
+    """
+    agg_cols = cfg.AGG_COLS
+
+    grouped = train \
+                .groupby(agg_cols)[['price', 'fly_duration']] \
+                .agg({'price':['min', 'median', q25, 'count'],
+                    'fly_duration':'mean'}).dropna().reset_index()
+
+    # remove multilevel columns
+    grouped.columns = agg_cols + ['min', 'median', 'q25', 'count', 'fly_duration']
+
+    # count will act like some kind of competition factor
+    grouped.rename(columns={'count':'competition'}, inplace=True)
+
+    # Feature 'total_q25': First quantile of each group during all time period
+    total_q25 = train.groupby(agg_cols)['price'].quantile(0.25) ######################### Revisar
+    total_q25 = total_q25.rename('total_q25').reset_index()
+    grouped['total_q25'] = pd.merge(grouped, total_q25, on=agg_cols, how='left')['total_q25']
+
+    # lastdays_q25: First quantile of last n days 
+    list_prices = grouped.groupby(['orig-dest','airline', 'session'])['q25'].agg(list)
+    list_prices = list_prices.reset_index()
+    list_prices.rename(columns={'q25':'list_prices'}, inplace=True)
+    grouped['list_prices'] = pd.merge(grouped, list_prices, on=['orig-dest','airline','session'], how='left')['list_prices']
+
+    grouped['lastdays_q25'] = grouped.progress_apply(get_last_days_q25, axis=1)
+
+    # CustomPrice = ticket price weightened considering last days trend
+    # We use this feature for estimate labels
+    grouped['customPrice'] =  cfg.W * grouped['total_q25'] + (1-cfg.W) * grouped['lastdays_q25']
+    
+    # target
+    grouped['wait'] = grouped.progress_apply(get_labels, axis=1)
+
+    # remove no needed columns
+    grouped.drop(['total_q25', 'list_prices', 'lastdays_q25'], axis=1, inplace=True, errors='ignore')
+
+    # prob feature: percentage of wait flights in a group
+    probs = grouped.groupby(['orig-dest','session' ,'days_until_dep'])['wait'].mean().reset_index()
+    probs.rename(columns={'wait':'prob'}, inplace=True)
+    grouped = pd.merge(grouped, probs, on=['orig-dest', 'session' ,'days_until_dep'], how='left')
+
+    # plot prob and save it
+    wait_grouped = grouped.groupby(['orig-dest','days_until_dep'])['wait'].mean().reset_index()
+    fig, axes = plt.subplots(1, 1, figsize=(8, 5))
+    sns.scatterplot(x='days_until_dep', y='wait', hue='wait', data=wait_grouped)
+    plt.xlabel('Days until departure');
+    plt.ylabel('Wait %');
+
+    fig.savefig(cfg.FIGURES_PATH + "prob_feature.png", pad_inches=0.5, bbox_inches='tight')
+
+    return grouped
+
+def preprocessing(filename):
     """
         Prepare data for model training:
             1. Missing values treatment
             2. Adding new features
-            3. Split data in train and test
+            3. Split data in train, valid and test
+            4. Aggregate train flights
+            5. Label data (wait column)
 
         Args:
             filename (str): input data path
     """
     
-    if verbose:
-        print('Starting feature engineering...')
-        print('...Loading data...', end='\r')
+    print('Starting feature engineering...')
 
-    os.chdir(sys.path[0])
-    df = pd.read_csv(filename)
+    # load data
+    df = load_data(cfg.INTERIM_DATA_PATH)
 
-    # drop 'seats' because has many nan
-    df.drop('seats', axis=True, inplace=True)
+    # missing values and remove no needed cols
+    df = cleaning_df(df);
     
-    # missing data
-    df = fill_missing(df)
-
-    if verbose:
-        print('...Adding new features...')
+    
+    print('...Adding new features...')
 
     # adding new features
     df = build_features(df)
 
-    # filter flights
-    df = filter_flights(df)
+    # split data in train, valid and test
+    train, test = split_data(df, test_days=cfg.SPLIT_TEST_DAYS)
 
-    if verbose:
-        print('...Adding target variable...')
-    # add target 'waiting_days'
-    df = add_waiting_days(df)
+    valid_idx = test.sample(frac=.5, random_state=cfg.RANDOM_STATE).index
 
-    print('\nDone!')
+    valid = test.loc[valid_idx].copy()
+    test = test.drop(valid_idx)
+
+    # aggregate flights 
+    print('...Grouping flight data...')
     
-    # split data in train and test sets
-    train, test = split_data(df, test_days=cfg.TEST_DAYS)
+    grouped = agg_flights(train)
+    
+    # estimated prices dataframe
+    create_price_bins(train)
 
     # Store data in processed folder
     os.chdir(sys.path[0])
 
-    train.to_csv(cfg.TRAIN_PROCESSED, index=False)
-    print('\nTrain data stored successfully!:', cfg.TRAIN_PROCESSED)
+    grouped.to_csv(cfg.TRAIN_PATH, index=False)
+    print('\nTraining data stored successfully!:', cfg.TRAIN_PATH)
+
+    valid.to_csv(cfg.VALID_PATH, index=False)
+    print('Validation data stored successfully!:', cfg.VALID_PATH)
     
-    test.to_csv(cfg.TEST_PROCESSED, index=False)
-    print('Test data stored successfully!:', cfg.TEST_PROCESSED)
+    test.to_csv(cfg.TEST_PATH, index=False)
+    print('Testing data stored successfully!:', cfg.TEST_PATH)
     
 
 if __name__ == '__main__':
-    feature_engineering(cfg.INTERIM_DATA_PATH, verbose=True)
+    preprocessing(cfg.INTERIM_DATA_PATH)
     
     
