@@ -13,7 +13,7 @@ from Simulator import Simulator
 
 def evaluator(model, n_travelers):
     os.chdir(sys.path[0])
-
+    # od
     pipeline_path = cfg.MODEL_OUTPUT + model
     pipeline = pickle.load(open(pipeline_path, 'rb'))
     test_data = pd.read_csv(cfg.TEST_PROCESSED)
