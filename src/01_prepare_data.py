@@ -12,14 +12,16 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from pathlib import Path
 import sys
 import os
+
+import config as cfg
+
 #-------------------------------------------------------------------
 # Variables 
 # ------------------------------------------------------------------
-RAW_DATA_PATH = '../data/raw/flights_raw.csv'
-INTERIM_DATA_PATH = '/interim/flights_interim.csv'
+RAW_DATA_PATH = cfg.RAW_DATA_PATH# input
+INTERIM_DATA_PATH = cfg.INTERIM_DATA_PATH # output
 # ------------------------------------------------------------------
 
 def load_data(path):
@@ -31,6 +33,7 @@ def load_data(path):
     Returns:
         df (DataFrame)
     """
+    print('...loading data from .csv...')
     # raw data has no column name so we need to provide it to the dataframe
     columns = ['dTime', 'dTimeUTC', 'aTime', 'aTimeUTC', 'airlines',
                'fly_duration', 'flyFrom', 'cityFrom', 'cityCodeFrom','flyTo',
@@ -60,6 +63,7 @@ def process_dates_cols(df):
         df (DataFrame): The same dataframe with date columns 
                         preprocessed.
     """
+    print('...preparing data...')
     # local dates
     df['dDate'] = df['dTime'].apply(lambda x: x.split(' ')[0])
     df['dTime'] = df['dTime'].apply(lambda x: x.split(' ')[1][:5])
@@ -86,6 +90,7 @@ def prepare_data(filename):
     flights = load_data(filename)
     flights.drop_duplicates(inplace=True)
     flights = process_dates_cols(flights)
+    #flights = flights[pd.to_datetime(flights['dDate']) <= '2021-04-21'] # up to today
     flights['fly_duration'] = flights['fly_duration'].apply(duration_to_numeric)
 
     columns = ['collectionDate','dDate', 'dTime', 'aDate', 'aTime', 'dTimeUTC', 'aTimeUTC',
@@ -95,9 +100,12 @@ def prepare_data(filename):
 
     flights = flights[columns]
 
-    store_path = str(Path(filename).parent.parent) + INTERIM_DATA_PATH
-    flights.to_csv(store_path, index=False)
-    return store_path
+    os.chdir(sys.path[0])
+    #store_path = str(Path(filename).parent.parent) + INTERIM_DATA_PATH
+    print('...storing data...')
+    flights.to_csv(INTERIM_DATA_PATH, index=False)
+    print('\nDone! Data path:')
+    return INTERIM_DATA_PATH
 
 if __name__ == '__main__':
     filename = RAW_DATA_PATH
