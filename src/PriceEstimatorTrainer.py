@@ -288,8 +288,6 @@ class PriceEstimatorTrainer:
         wait_per = (df.groupby('orig-dest')['predicted'].mean()*100).round(2).astype('str') + '%'
         mean_savings = df.groupby('orig-dest')['savings'].mean()
         df['correct'] = (df['predicted'] == df['wait']) & (df['wait']==1)
-        accuracy = (df.groupby('orig-dest')['correct'].mean()*100).round(2).astype('str') + '%'
-
 
 
         res_byroute = pd.DataFrame({
@@ -298,7 +296,6 @@ class PriceEstimatorTrainer:
             'Mean Savings (€)': round(mean_savings, 2),
             'Savings Percentage': saving_per,
             'Wait predicted': wait_per,
-            'Wait correctly predicted': accuracy,
         }, index=savings.index)
 
 
