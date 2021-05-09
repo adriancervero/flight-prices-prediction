@@ -3,7 +3,10 @@
 
 """
     Prepare raw data for the exploratory analysis
-    @author: Adrián Cerveró
+        - Input: data/raw/
+        - Output: data/interim/
+
+    @author: Adrián Cerveró 05/2021
 """
 
 #-------------------------------------------------------------------
@@ -33,6 +36,7 @@ def load_data(path):
     Returns:
         df (DataFrame)
     """
+
     print('...loading data from .csv...')
     # raw data has no column name so we need to provide it to the dataframe
     columns = ['dTime', 'dTimeUTC', 'aTime', 'aTimeUTC', 'airlines',
@@ -100,8 +104,9 @@ def prepare_data(filename):
 
     flights = flights[columns]
 
+    #flights = flights[pd.to_datetime(flights['dDate'])<= pd.to_datetime(flights['collectionDate']).max()]
+
     os.chdir(sys.path[0])
-    #store_path = str(Path(filename).parent.parent) + INTERIM_DATA_PATH
     print('...storing data...')
     flights.to_csv(INTERIM_DATA_PATH, index=False)
     print('\nDone! Data path:')
@@ -109,7 +114,7 @@ def prepare_data(filename):
 
 if __name__ == '__main__':
     filename = RAW_DATA_PATH
-    print(prepare_data(filename))
+    print(prepare_data(filename)+'\n\n')
     
 
     
