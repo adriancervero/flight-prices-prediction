@@ -4,6 +4,11 @@
 """ Front-end App built with Streamlit """
 
 import sys, os
+
+cwd = os.getcwd()
+if cwd + '/src/' not in sys.path:
+    sys.path.append(cwd + '/src/')
+
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np 
@@ -13,8 +18,6 @@ import pickle
 import matplotlib.pyplot as plt
 from src.PriceEstimator import PriceEstimator
 from datetime import timedelta
-
-
 
 def load_data():
     valid = pd.read_csv('data/processed/valid.csv')
@@ -64,7 +67,7 @@ if __name__ == '__main__':
     results = st.beta_container()
 
     # load estimator
-    model_name = 'rf_pre_69%_sav_11%.pkl'
+    model_name = 'rf.pkl'
     flights_data = load_data()
     estimator = load_estimator(model_name, flights_data)
 
