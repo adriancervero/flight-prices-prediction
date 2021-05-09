@@ -6,7 +6,8 @@
         - Input: data/raw/
         - Output: data/interim/
 
-    @author: Adrián Cerveró 05/2021
+    @author: Adrián Cervero - May 2021
+    @github: https://github.com/adriancervero/flight-prices-prediction
 """
 
 #-------------------------------------------------------------------

@@ -36,7 +36,7 @@ ROUTES = [
 HOST = '********************'
 PORT = '****'
 DB  = '******'
-USER = '******''
+USER = '******'
 PASSW = '********************'
 
 def send_request(origin, dest, date_from, date_to, limit=1000):

@@ -6,6 +6,15 @@
         1. Missing values treatment
         2. Adding new features
         3. Split data in train and test
+        4. Agg. flights data
+        5. Label data (wait column)
+        6. Create price_bins datafrom for estimate days to wait
+
+        Input: data/interim
+        Output: data/processed
+
+        @author: Adrián Cervero - May 2021
+        @github: https://github.com/adriancervero/flight-prices-prediction
 """
 
 #-------------------------------------------------------------------
@@ -17,10 +26,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime, timedelta
 import os, sys
-
-import config as cfg
+import argparse
 from tqdm import tqdm
 tqdm.pandas()
+
+import config as cfg
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -30,12 +40,20 @@ def load_data(path):
     """ Load data and return a Pandas dataframe. """
     print('...loading data from .csv...')
     
-    os.chdir(sys.path[0]) # relative path to the .py file
+    os.chdir(sys.path[0]) # relative path to this file
     df = pd.read_csv(path)
     return df
 
 def cleaning_df(df):
-    """ Drop no relevant columns """
+    """ Drop  irrelevant columns and outliers """
+
+    # outliers
+    Q1 = df['price'].quantile(.25)
+    Q3 = df['price'].quantile(.75)
+    IQR = Q3-Q1
+    df = df[df['price'] < IQR*1.5 ]
+
+    # columns to drop
     drop_cols = ['seats', 'dTimeUTC', 'aTimeUTC', 'flight_no',
             'cityFrom', 'cityCodeFrom', 'cityTo', 'cityCodeTo', 'countryFrom',
              'countryTo']
@@ -64,12 +82,17 @@ def build_features(df):
     df['airline'] = df['airlines'].str.split(',').apply(lambda x: x[0])
     # days until departure
     df = add_days_until_dep_feature(df)
+    # price log-transform
+    df['log_price'] = np.log(df['price'])
+    # number of stops between origin and destinations
+    df['hops'] = df['route'].str.split('->').apply(len)-2
 
     return df
 
 
 def split_data(df, test_days=30):
     """ Split data in train/test set """
+
     collection_dates = pd.to_datetime(df['collectionDate'])
     departure_dates = pd.to_datetime(df['dDate'])
     
@@ -77,6 +100,7 @@ def split_data(df, test_days=30):
     test_idx = (collection_dates >= split_date) & (departure_dates <= collection_dates.max())
     test = df[test_idx]
     train = df[~test_idx]
+
     return train, test
 
 def q25(x):
@@ -84,7 +108,11 @@ def q25(x):
     return x.quantile(0.25)
 
 def get_labels(row):
-    """ Assign wait or buy label """
+    """ 
+    Assign wait or buy label. If price decrease in next days
+    label 1 otherwise label 0. The decrease has to exceed a threshold 
+    (MIN_DROP_PER variable)
+    """
     current_d = row['days_until_dep']
     current_price = row[cfg.COMBINE_PRICE_FEATURE]
     list_prices = np.array(row['list_prices'])
@@ -94,7 +122,7 @@ def get_labels(row):
     else:
         min_price = np.min(next_days)
 
-        if min_price < current_price and 1-(min_price/current_price) > cfg.MIN_DROP_PER:
+        if min_price < current_price and 1-(min_price/current_price) > cfg.MIN_DROP_PER_TRAIN:
             return 1
         else:
             return 0
@@ -182,9 +210,12 @@ def agg_flights(train):
     
     # target
     grouped['wait'] = grouped.progress_apply(get_labels, axis=1)
+    print(grouped['wait'].value_counts())
 
     # remove no needed columns
     grouped.drop(['total_q25', 'list_prices', 'lastdays_q25'], axis=1, inplace=True, errors='ignore')
+
+    grouped.rename(columns={'q25':'price'}, inplace=True)
 
     # prob feature: percentage of wait flights in a group
     probs = grouped.groupby(['orig-dest','session' ,'days_until_dep'])['wait'].mean().reset_index()
@@ -202,7 +233,13 @@ def agg_flights(train):
 
     return grouped
 
-def preprocessing(filename):
+def filter_flights(df):
+    routes = ['MAD-EZE', 'MAD-MEX', 'MAD-JFK']
+    df = df[(df['orig-dest'].isin(routes))]
+    return df
+
+
+def preprocessing(filename, min_drop_per):
     """
         Prepare data for model training:
             1. Missing values treatment
@@ -210,12 +247,16 @@ def preprocessing(filename):
             3. Split data in train, valid and test
             4. Aggregate train flights
             5. Label data (wait column)
+            6. Create price_bins datafrom for estimate days to wait
+
 
         Args:
             filename (str): input data path
     """
     
     print('Starting feature engineering...')
+    
+    cfg.MIN_DROP_PER_TRAIN = min_drop_per
 
     # load data
     df = load_data(cfg.INTERIM_DATA_PATH)
@@ -229,6 +270,8 @@ def preprocessing(filename):
     # adding new features
     df = build_features(df)
 
+    #df = filter_flights(df)
+
     # split data in train, valid and test
     train, test = split_data(df, test_days=cfg.SPLIT_TEST_DAYS)
 
@@ -241,7 +284,7 @@ def preprocessing(filename):
     print('...Grouping flight data...')
     
     grouped = agg_flights(train)
-    
+
     # estimated prices dataframe
     create_price_bins(train)
 
@@ -259,6 +302,10 @@ def preprocessing(filename):
     
 
 if __name__ == '__main__':
-    preprocessing(cfg.INTERIM_DATA_PATH)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--min_drop', type=float, default=0.05)
+    args = parser.parse_args()
+
+    preprocessing(cfg.INTERIM_DATA_PATH, args.min_drop)
     
     

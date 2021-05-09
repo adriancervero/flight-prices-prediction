@@ -3,7 +3,11 @@
 
 """
     Make some plots and store them in figures folder
-    @author: Adrián Cerveró
+        - Input: data/interim
+        - Output: figures/
+
+    @author: Adrián Cervero - May 2021
+    @github: https://github.com/adriancervero/flight-prices-prediction
 """
 #-------------------------------------------------------------------
 # Imports 
@@ -108,7 +112,7 @@ def plot_day_of_week_mad_ny(flights):
     print(figure_path)
 
 def plot_day_of_week_all(flights):
-    
+    """ Prices by Session on each route """
     fig, axes = plt.subplots(1, 1, figsize=(20,5))
     grouped = flights.groupby(['orig-dest', 'day_of_week', 'days_until_dep'])['log_price'].quantile(.25).reset_index()
     sns.boxplot(x='orig-dest', y='log_price', data=grouped, showfliers=False, hue='day_of_week',
@@ -151,6 +155,7 @@ def plot_days_until_dep(flights):
     print(figure_path)
 
 def make_visualizations():
+    """ Make some plots and store them in figures/ folder """
     flights = load_data(INTERIM_DATA_PATH)
     print("...making plots...")
     flights = build_features(flights)
