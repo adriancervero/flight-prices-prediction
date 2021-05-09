@@ -104,7 +104,7 @@ def prepare_data(filename):
 
     flights = flights[columns]
 
-    #flights = flights[pd.to_datetime(flights['dDate'])<= pd.to_datetime(flights['collectionDate']).max()]
+    flights = flights[pd.to_datetime(flights['dDate'])<= pd.to_datetime(flights['collectionDate']).max()]
 
     os.chdir(sys.path[0])
     print('...storing data...')
