@@ -1,0 +1,5 @@
+                    random forest   log_reg     xgb     knn
+Precision (valid)   0.77            0.68        0.66    0.67
+Savings % (valid)   11%             7%          5%      6%
+Precision (test)    0.74            0.69        0.64    0.69
+Savings % (test)    10%             6%          4%      5%
