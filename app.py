@@ -35,9 +35,9 @@ def build_pieChart(prob):
     fig, ax = plt.subplots()
 
     # color
-    if prob >= 0.6:
+    if prob >= 0.55:
         main = 'seagreen'
-    elif prob >= 0.25:
+    elif prob >= 0.35:
         main = 'goldenrod'
     else:
         main = 'darkred'
@@ -137,8 +137,14 @@ if __name__ == '__main__':
                     
                     if wait: # predicts wait
                         res_str_style = f'<p style="background-color:cornflowerblue; border-radius: 6px; color:white; display:inline; font-size:20px;">{res_str}</p>'
-                        col2.text('Wait price:')
-                        col2.write(output['wait_price'])
+                        wait_price = int(output['wait_price'])
+                        if wait_price < price:
+                            wait_price_str = f'<p style="color:green;">{wait_price}€</p>'
+                        else:
+                            wait_price_str = f'<p style="color:red;">{wait_price}€</p>'
+
+                        col2.markdown("[Price after wait]"+wait_price_str, unsafe_allow_html=True)
+                        #col2.write()
 
                     else: # predicts buy
                         res_str_style = f'<p style="background-color:seagreen; border-radius: 6px;color:white; display:inline; font-size:16px;">{res_str}</p>'
