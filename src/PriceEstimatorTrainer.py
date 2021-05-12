@@ -310,7 +310,7 @@ class PriceEstimatorTrainer:
         df = self.final_df
         savings = df[df['savings'] > 0].groupby('orig-dest')[['savings']].sum().astype(int).reset_index()
         losses = df[df['savings'] < 0].groupby('orig-dest')[['savings']].sum().astype(int).reset_index()
-        plt.figure(figsize=(8,6))
+        fig, axs = plt.subplots(figsize=(8,6))
         g = sns.barplot(x='savings', y='orig-dest', data=savings, color='seagreen', );
         g2 = sns.barplot(x='savings', y='orig-dest', data=losses, color='darksalmon');
         #g.spines['left'].set_position(('axes', 0))
@@ -330,7 +330,8 @@ class PriceEstimatorTrainer:
         lim = savings['savings'].max()
         plt.xlim(-lim,lim)
 
-        
+       
+        fig.savefig('../figures/savings_by_route.png', pad_inches=0.2, bbox_inches='tight')
         
     def fit(self):
         """ Fit model with training data """
