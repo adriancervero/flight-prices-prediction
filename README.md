@@ -18,7 +18,8 @@ cd flight-prices-prediction
 ```
 Next, create the environment with the necessary dependencies:
 ```
-conda env create --file environment.yml
+conda env create --file environment.yml --name tfm
+conda activate tfm
 ```
 Finally, execute make command for reproduce all the analysis
 ```
