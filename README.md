@@ -81,3 +81,7 @@ In general, the model that has given us the best results is a Random Forest, so 
 | Savings (test) | 10% | 6% | 4% | 5% |
 
  .* Savings are the average percentage money saved by traveler
+ 
+ ### Savings and losses by route:
+ 
+ ![Savings by route](figures/savings_by_route.png)
