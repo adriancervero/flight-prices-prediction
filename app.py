@@ -147,7 +147,7 @@ if __name__ == '__main__':
                         #col2.write()
 
                     else: # predicts buy
-                        res_str_style = f'<p style="background-color:seagreen; border-radius: 6px;color:white; display:inline; font-size:16px;">{res_str}</p>'
+                        res_str_style = f'<p style="background-color:seagreen; border-radius: 6px;color:white; display:inline; font-size:20px;">{res_str}</p>'
 
                     # text response
                     col1.markdown(res_str_style, unsafe_allow_html=True)
@@ -182,6 +182,6 @@ if __name__ == '__main__':
                     input_container.subheader('Alternative flights:')
                     input_container.markdown("""<div style="height:3px;border:none;color:#333;background-color:#333;" </div> """,unsafe_allow_html=True)
                 else:
-                    col3.button('Select', key=ind)
+                    #col3.button('Select', key=ind)
                     st.markdown('---')
 
