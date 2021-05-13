@@ -36,7 +36,6 @@ import pickle
 import logging
 import os, sys
 
-
 # My imports
 import config as cfg
 import model_selector
@@ -65,6 +64,8 @@ def generate_model(param_grid):
 def run(model, n_iter, comment, testset, output):
     """ Performs training process """
 
+    print("\n----- 04 - Training Model -----\n\n")
+
     # load training data 
     os.chdir(sys.path[0])
     df = pd.read_csv(cfg.TRAIN_PATH)
@@ -84,7 +85,7 @@ def run(model, n_iter, comment, testset, output):
         trainer.fit()
 
         # print results on validation
-        acc, mean_savings = trainer.evaluate(on=testset)
+        acc, mean_savings = trainer.evaluate(on=testset, plot=True)
     
         logging.info(f"Precision: {acc}, Mean Savings %: {mean_savings}, Notes:{comment}, Model:{m}")
         logging.info("---------------------------------------------------------------------------------------")
@@ -92,6 +93,7 @@ def run(model, n_iter, comment, testset, output):
         if output != '':
             output_path = cfg.MODEL_OUTPUT + output
             pickle.dump(trainer.model, open(output_path, 'wb'))
+            print('\n\nmodel stored: ', output_path)
             
     else: # hypertunning
 

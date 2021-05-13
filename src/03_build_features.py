@@ -253,8 +253,7 @@ def preprocessing(filename, min_drop_per):
         Args:
             filename (str): input data path
     """
-    
-    print('Starting feature engineering...')
+    print("\n----- 03 - Feature Engineering -----")
     
     cfg.MIN_DROP_PER_TRAIN = min_drop_per
 

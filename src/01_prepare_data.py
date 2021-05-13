@@ -91,7 +91,7 @@ def prepare_data(filename):
     Args:
         filename (str): raw data filename path
     """
-    
+    print("\n----- 01 - Prepare data -----")
     flights = load_data(filename)
     flights.drop_duplicates(inplace=True)
     flights = process_dates_cols(flights)

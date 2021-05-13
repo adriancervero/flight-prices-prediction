@@ -22,8 +22,9 @@ import matplotlib.ticker as ticker
 import config as cfg
 
 sns.set_palette('deep')
-import warnings
-warnings.filterwarnings('ignore')
+
+from PyQt5 import QtWidgets
+qApp = QtWidgets.QApplication([str(" ")])
 
 #-------------------------------------------------------------------
 # Variables 
@@ -156,6 +157,8 @@ def plot_days_until_dep(flights):
 
 def make_visualizations():
     """ Make some plots and store them in figures/ folder """
+    print("\n----- 02 - Making Visualizations -----")
+
     flights = load_data(INTERIM_DATA_PATH)
     print("...making plots...")
     flights = build_features(flights)
