@@ -1,0 +1,21 @@
+                 Model  Savings (k€)  Losses (k€)  Mean (%) Accuracy f1-score Precision Recall
+RandomForestClassifier         108.4        -73.7       4.0   65.32%   78.29%    66.17% 95.85%
+
+
+           Savings (k€)  Losses (k€)  Mean Savings (€) Savings Percentage Wait predicted
+orig-dest                                                                               
+BCN-AMS            17.3         -4.5              8.25              7.18%         100.0%
+BCN-FCO            11.6         -3.8              6.07              5.81%         99.61%
+BCN-LGW             5.5         -2.2              7.72              3.19%         100.0%
+BCN-PMI             4.1         -0.4              6.42              21.0%         86.61%
+MAD-BCN             3.5         -1.4              2.66              3.82%         87.24%
+MAD-EZE             2.5         -0.8             13.45              3.53%         100.0%
+MAD-JFK            14.3        -18.9             -3.31             -2.32%         98.38%
+MAD-LHR            12.7         -7.7              5.25              -0.1%         75.57%
+MAD-MEX            22.9        -30.3             -5.35             -2.36%         100.0%
+MAD-TFN            14.0         -3.8             10.70              8.42%         99.17%
+
+Threshold: 0.5
+Confusion Matrix:
+[[ 280 3197]
+ [ 271 6252]]

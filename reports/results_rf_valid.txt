@@ -1,19 +1,23 @@
+
+----- 04 - Training Model -----
+
+
                  Model  Savings (k€)  Losses (k€)  Mean (%) Accuracy f1-score Precision Recall
 RandomForestClassifier          23.3         -4.9      11.0   41.28%   30.19%    77.53% 18.75%
 
 
-           Savings (k€)  Losses (k€)  Mean Savings (€) Savings Percentage Wait predicted Wait correctly predicted
-orig-dest                                                                                                        
-BCN-AMS             4.0         -1.4              7.96              6.92%          22.5%                   17.02%
-BCN-FCO             2.1         -0.2             12.46              13.9%         11.86%                    9.28%
-BCN-LGW             1.8         -0.3             12.00             12.35%         28.34%                   22.45%
-BCN-PMI             1.4         -0.0              7.17             29.29%         28.02%                   21.05%
-MAD-BCN             0.3         -0.1              4.62              2.06%          4.27%                    3.17%
-MAD-EZE             0.6         -0.1             22.16              5.65%          18.8%                   17.29%
-MAD-JFK             5.1         -0.6             19.59              9.42%         16.17%                   13.12%
-MAD-LHR             1.0         -0.5              4.81              3.08%          8.55%                    3.76%
-MAD-MEX             2.5         -0.4             22.40              7.73%           7.2%                    6.97%
-MAD-TFN             4.3         -1.4              9.02              7.35%         32.77%                   26.87%
+           Savings (k€)  Losses (k€)  Mean Savings (€) Savings Percentage Wait predicted
+orig-dest                                                                               
+BCN-AMS             4.0         -1.4              7.96              6.92%          22.5%
+BCN-FCO             2.1         -0.2             12.46              13.9%         11.86%
+BCN-LGW             1.8         -0.3             12.00             12.35%         28.34%
+BCN-PMI             1.4         -0.0              7.17             29.29%         28.02%
+MAD-BCN             0.3         -0.1              4.62              2.06%          4.27%
+MAD-EZE             0.6         -0.1             22.16              5.65%          18.8%
+MAD-JFK             5.1         -0.6             19.59              9.42%         16.17%
+MAD-LHR             1.0         -0.5              4.81              3.08%          8.55%
+MAD-MEX             2.5         -0.4             22.40              7.73%           7.2%
+MAD-TFN             4.3         -1.4              9.02              7.35%         32.77%
 
 Threshold: 0.5
 Confusion Matrix:
