@@ -18,7 +18,8 @@ cd flight-prices-prediction
 ```
 Next, create the environment with the necessary dependencies:
 ```
-conda env create --file environment.yml
+conda env create --file environment.yml --name tfm
+conda activate tfm
 ```
 Finally, execute make command for reproduce all the analysis
 ```
@@ -82,6 +83,6 @@ In general, the model that has given us the best results is a Random Forest, so 
 
  .* Savings are the average percentage money saved by traveler
  
- ### Savings and losses by route:
+ ### Savings and losses by route with 10.000 simulated travelers:
  
  ![Savings by route](figures/savings_by_route.png)
